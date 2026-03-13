@@ -46,6 +46,10 @@ func (s *Scheduler) Stop() {
 	s.logger.Info("scheduler stopped")
 }
 
+func (s *Scheduler) TriggerNow() {
+	go s.postDailySummary()
+}
+
 func (s *Scheduler) postDailySummary() {
 	s.logger.Info("running daily summary job")
 

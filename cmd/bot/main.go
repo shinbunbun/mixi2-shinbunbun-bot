@@ -86,6 +86,12 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("ok"))
 	})
+	healthMux.HandleFunc("POST /trigger", func(w http.ResponseWriter, r *http.Request) {
+		logger.Info("manual trigger requested")
+		sched.TriggerNow()
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("triggered"))
+	})
 	healthServer := &http.Server{
 		Addr:    ":" + cfg.HealthPort,
 		Handler: healthMux,
