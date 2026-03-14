@@ -18,6 +18,7 @@ type Payload struct {
 	Size         int           `json:"size"`
 	Commits      []Commit      `json:"commits"`
 	Action       string        `json:"action"`
+	Number       int           `json:"number"`
 	PullRequest  *PullRequest  `json:"pull_request"`
 	Issue        *Issue        `json:"issue"`
 	RefType      string        `json:"ref_type"`
@@ -34,7 +35,7 @@ type Commit struct {
 }
 
 type PullRequest struct {
-	Title  string `json:"title"`
+	URL    string `json:"url"`
 	Number int    `json:"number"`
 }
 

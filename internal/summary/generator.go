@@ -17,7 +17,6 @@ type repoStats struct {
 type prInfo struct {
 	repo   string
 	number int
-	title  string
 	action string
 }
 
@@ -55,14 +54,11 @@ func Generate(events []github.Event) string {
 			totalCommits += size
 
 		case "PullRequestEvent":
-			if ev.Payload.PullRequest != nil {
-				prs = append(prs, prInfo{
-					repo:   ev.Repo.Name,
-					number: ev.Payload.PullRequest.Number,
-					title:  ev.Payload.PullRequest.Title,
-					action: ev.Payload.Action,
-				})
-			}
+			prs = append(prs, prInfo{
+				repo:   ev.Repo.Name,
+				number: ev.Payload.Number,
+				action: ev.Payload.Action,
+			})
 
 		case "IssuesEvent":
 			if ev.Payload.Issue != nil {
@@ -91,7 +87,7 @@ func Generate(events []github.Event) string {
 	if len(prs) > 0 {
 		parts = append(parts, fmt.Sprintf("🔀 PR: %d件", len(prs)))
 		for _, pr := range prs {
-			parts = append(parts, fmt.Sprintf("  - %s #%d: \"%s\" (%s)", pr.repo, pr.number, pr.title, pr.action))
+			parts = append(parts, fmt.Sprintf("  - %s #%d (%s)", pr.repo, pr.number, pr.action))
 		}
 	}
 
