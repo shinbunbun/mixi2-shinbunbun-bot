@@ -1,14 +1,50 @@
 package summary
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/shinbunbun/mixi2-shinbunbun-bot/internal/github"
+	"github.com/shinbunbun/mixi2-shinbunbun-bot/internal/llm"
 )
 
 const maxPostLength = 149
+
+type Generator struct {
+	llmClient *llm.Client
+}
+
+func NewGenerator(llmClient *llm.Client) *Generator {
+	return &Generator{llmClient: llmClient}
+}
+
+func (g *Generator) Generate(ctx context.Context, events []github.EventWithDetails) string {
+	systemPrompt, userPrompt := llm.BuildPrompt(events)
+	result, err := g.llmClient.GenerateSummary(ctx, systemPrompt, userPrompt)
+	if err != nil {
+		slog.Warn("LLM summary failed, falling back to template", slog.String("error", err.Error()))
+		return g.fallback(events)
+	}
+
+	result = strings.TrimSpace(result)
+	if result == "" {
+		slog.Warn("LLM returned empty response, falling back to template")
+		return g.fallback(events)
+	}
+
+	return truncate(result)
+}
+
+func (g *Generator) fallback(enriched []github.EventWithDetails) string {
+	var events []github.Event
+	for _, ed := range enriched {
+		events = append(events, ed.Event)
+	}
+	return generateTemplate(events)
+}
 
 type repoStats struct {
 	commits int
@@ -27,7 +63,7 @@ type issueInfo struct {
 	action string
 }
 
-func Generate(events []github.Event) string {
+func generateTemplate(events []github.Event) string {
 	now := time.Now()
 	dateStr := now.Format("2006/01/02")
 

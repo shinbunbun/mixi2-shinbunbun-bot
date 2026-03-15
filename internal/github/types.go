@@ -60,3 +60,16 @@ type Release struct {
 type Forkee struct {
 	FullName string `json:"full_name"`
 }
+
+type PRFile struct {
+	Filename  string `json:"filename"`
+	Status    string `json:"status"`
+	Additions int    `json:"additions"`
+	Deletions int    `json:"deletions"`
+	Patch     string `json:"patch"`
+}
+
+type EventWithDetails struct {
+	Event   Event
+	PRFiles []PRFile
+}

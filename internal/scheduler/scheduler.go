@@ -15,14 +15,16 @@ type Scheduler struct {
 	cron         *cron.Cron
 	githubClient *github.Client
 	mixi2Client  *mixi2.Client
+	summaryGen   *summary.Generator
 	logger       *slog.Logger
 }
 
-func New(githubClient *github.Client, mixi2Client *mixi2.Client) *Scheduler {
+func New(githubClient *github.Client, mixi2Client *mixi2.Client, summaryGen *summary.Generator) *Scheduler {
 	return &Scheduler{
 		cron:         cron.New(),
 		githubClient: githubClient,
 		mixi2Client:  mixi2Client,
+		summaryGen:   summaryGen,
 		logger:       slog.Default(),
 	}
 }
@@ -53,7 +55,7 @@ func (s *Scheduler) TriggerNow() {
 func (s *Scheduler) postDailySummary() {
 	s.logger.Info("running daily summary job")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
 	since := time.Now().Add(-24 * time.Hour)
@@ -63,7 +65,13 @@ func (s *Scheduler) postDailySummary() {
 		return
 	}
 
-	text := summary.Generate(events)
+	enriched, err := s.githubClient.EnrichEvents(ctx, events)
+	if err != nil {
+		s.logger.Error("failed to enrich events", slog.String("error", err.Error()))
+		return
+	}
+
+	text := s.summaryGen.Generate(ctx, enriched)
 	s.logger.Info("generated summary", slog.String("text", text))
 
 	if err := s.mixi2Client.CreatePost(ctx, text); err != nil {

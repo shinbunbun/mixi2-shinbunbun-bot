@@ -20,8 +20,10 @@ import (
 	"github.com/shinbunbun/mixi2-shinbunbun-bot/internal/config"
 	"github.com/shinbunbun/mixi2-shinbunbun-bot/internal/github"
 	"github.com/shinbunbun/mixi2-shinbunbun-bot/internal/handler"
+	"github.com/shinbunbun/mixi2-shinbunbun-bot/internal/llm"
 	"github.com/shinbunbun/mixi2-shinbunbun-bot/internal/mixi2"
 	"github.com/shinbunbun/mixi2-shinbunbun-bot/internal/scheduler"
+	"github.com/shinbunbun/mixi2-shinbunbun-bot/internal/summary"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -64,10 +66,14 @@ func main() {
 	mixi2Client := mixi2.NewClient(apiClient, authenticator)
 
 	// Create GitHub client
-	githubClient := github.NewClient()
+	githubClient := github.NewClient(cfg.GitHubToken)
+
+	// Create LLM client and summary generator
+	llmClient := llm.NewClient(cfg.LLMBaseURL, cfg.LLMModel)
+	summaryGen := summary.NewGenerator(llmClient)
 
 	// Start scheduler
-	sched := scheduler.New(githubClient, mixi2Client)
+	sched := scheduler.New(githubClient, mixi2Client, summaryGen)
 	if err := sched.Start(cfg.DailyPostCron); err != nil {
 		log.Fatalf("failed to start scheduler: %v", err)
 	}

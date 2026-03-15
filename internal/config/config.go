@@ -14,6 +14,9 @@ type Config struct {
 	Port               string
 	HealthPort         string
 	DailyPostCron      string
+	GitHubToken        string
+	LLMBaseURL         string
+	LLMModel           string
 }
 
 func Load() (*Config, error) {
@@ -26,6 +29,9 @@ func Load() (*Config, error) {
 		Port:              os.Getenv("PORT"),
 		HealthPort:        os.Getenv("HEALTH_PORT"),
 		DailyPostCron:     os.Getenv("DAILY_POST_CRON"),
+		GitHubToken:       os.Getenv("GITHUB_TOKEN"),
+		LLMBaseURL:        os.Getenv("LLM_BASE_URL"),
+		LLMModel:          os.Getenv("LLM_MODEL"),
 	}
 
 	if cfg.ClientID == "" {
@@ -43,6 +49,9 @@ func Load() (*Config, error) {
 	if cfg.SignaturePublicKey == "" {
 		return nil, fmt.Errorf("SIGNATURE_PUBLIC_KEY is required")
 	}
+	if cfg.GitHubToken == "" {
+		return nil, fmt.Errorf("GITHUB_TOKEN is required")
+	}
 
 	if cfg.Port == "" {
 		cfg.Port = "8080"
@@ -52,6 +61,12 @@ func Load() (*Config, error) {
 	}
 	if cfg.DailyPostCron == "" {
 		cfg.DailyPostCron = "0 0 * * *"
+	}
+	if cfg.LLMBaseURL == "" {
+		cfg.LLMBaseURL = "http://192.168.1.5:8081/v1"
+	}
+	if cfg.LLMModel == "" {
+		cfg.LLMModel = "mlx-community/Qwen3.5-4B-MLX-4bit"
 	}
 
 	return cfg, nil

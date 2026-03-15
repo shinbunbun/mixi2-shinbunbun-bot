@@ -15,24 +15,31 @@ const (
 
 type Client struct {
 	httpClient *http.Client
+	token      string
 }
 
-func NewClient() *Client {
+func NewClient(token string) *Client {
 	return &Client{
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
+		token: token,
 	}
 }
 
-func (c *Client) FetchRecentEvents(ctx context.Context, since time.Time) ([]Event, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, eventsURL, nil)
+func (c *Client) doRequest(ctx context.Context, method, url string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating request: %w", err)
 	}
 	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 
-	resp, err := c.httpClient.Do(req)
+	return c.httpClient.Do(req)
+}
+
+func (c *Client) FetchRecentEvents(ctx context.Context, since time.Time) ([]Event, error) {
+	resp, err := c.doRequest(ctx, http.MethodGet, eventsURL)
 	if err != nil {
 		return nil, fmt.Errorf("fetching events: %w", err)
 	}
