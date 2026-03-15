@@ -6,7 +6,6 @@ require (
 	github.com/mixigroup/mixi2-application-sdk-go v1.0.0
 	github.com/openai/openai-go v1.12.0
 	github.com/robfig/cron/v3 v3.0.1
-	golang.org/x/sync v0.20.0
 	google.golang.org/grpc v1.78.0
 )
 

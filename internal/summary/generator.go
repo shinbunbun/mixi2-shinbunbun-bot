@@ -21,7 +21,7 @@ func NewGenerator(llmClient *llm.Client) *Generator {
 	return &Generator{llmClient: llmClient}
 }
 
-func (g *Generator) Generate(ctx context.Context, events []github.EventWithDetails) []string {
+func (g *Generator) Generate(ctx context.Context, events []github.Event) string {
 	systemPrompt, userPrompt := llm.BuildPrompt(events)
 	result, err := g.llmClient.GenerateSummary(ctx, systemPrompt, userPrompt)
 	if err != nil {
@@ -35,15 +35,19 @@ func (g *Generator) Generate(ctx context.Context, events []github.EventWithDetai
 		return g.fallback(events)
 	}
 
-	return splitForThread(result)
+	return truncate(result)
 }
 
-func (g *Generator) fallback(enriched []github.EventWithDetails) []string {
-	var events []github.Event
-	for _, ed := range enriched {
-		events = append(events, ed.Event)
+func (g *Generator) fallback(events []github.Event) string {
+	return truncate(generateTemplate(events))
+}
+
+func truncate(text string) string {
+	runes := []rune(text)
+	if len(runes) <= maxPostLength {
+		return text
 	}
-	return splitForThread(generateTemplate(events))
+	return string(runes[:maxPostLength-1]) + "…"
 }
 
 type repoStats struct {
@@ -137,53 +141,4 @@ func generateTemplate(events []github.Event) string {
 	parts = append(parts, "今日も開発お疲れ様でした！")
 
 	return strings.Join(parts, "\n")
-}
-
-func splitForThread(text string) []string {
-	runes := []rune(text)
-	if len(runes) <= maxPostLength {
-		return []string{text}
-	}
-
-	var posts []string
-	for len(runes) > 0 {
-		if len(runes) <= maxPostLength {
-			posts = append(posts, string(runes))
-			break
-		}
-
-		chunk := runes[:maxPostLength]
-		cutAt := -1
-
-		// 改行で分割を試みる
-		for i := len(chunk) - 1; i >= 0; i-- {
-			if chunk[i] == '\n' {
-				cutAt = i
-				break
-			}
-		}
-
-		// 句読点で分割を試みる
-		if cutAt == -1 {
-			for i := len(chunk) - 1; i >= 0; i-- {
-				if chunk[i] == '。' || chunk[i] == '！' || chunk[i] == '、' {
-					cutAt = i + 1
-					break
-				}
-			}
-		}
-
-		// ハードカット
-		if cutAt <= 0 {
-			cutAt = maxPostLength
-		}
-
-		post := strings.TrimSpace(string(runes[:cutAt]))
-		if post != "" {
-			posts = append(posts, post)
-		}
-		runes = runes[cutAt:]
-	}
-
-	return posts
 }

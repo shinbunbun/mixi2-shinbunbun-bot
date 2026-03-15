@@ -65,20 +65,11 @@ func (s *Scheduler) postDailySummary() {
 		return
 	}
 
-	enriched, err := s.githubClient.EnrichEvents(ctx, events)
-	if err != nil {
-		s.logger.Error("failed to enrich events", slog.String("error", err.Error()))
-		return
-	}
+	post := s.summaryGen.Generate(ctx, events)
+	s.logger.Info("generated summary", slog.String("text", post))
 
-	posts := s.summaryGen.Generate(ctx, enriched)
-	s.logger.Info("generated summary", slog.Int("thread_size", len(posts)))
-	for i, p := range posts {
-		s.logger.Info("thread post", slog.Int("index", i), slog.String("text", p))
-	}
-
-	if err := s.mixi2Client.CreateThread(ctx, posts); err != nil {
-		s.logger.Error("failed to create thread", slog.String("error", err.Error()))
+	if err := s.mixi2Client.CreatePost(ctx, post); err != nil {
+		s.logger.Error("failed to create post", slog.String("error", err.Error()))
 		return
 	}
 
