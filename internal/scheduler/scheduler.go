@@ -71,11 +71,14 @@ func (s *Scheduler) postDailySummary() {
 		return
 	}
 
-	text := s.summaryGen.Generate(ctx, enriched)
-	s.logger.Info("generated summary", slog.String("text", text))
+	posts := s.summaryGen.Generate(ctx, enriched)
+	s.logger.Info("generated summary", slog.Int("thread_size", len(posts)))
+	for i, p := range posts {
+		s.logger.Info("thread post", slog.Int("index", i), slog.String("text", p))
+	}
 
-	if err := s.mixi2Client.CreatePost(ctx, text); err != nil {
-		s.logger.Error("failed to create post", slog.String("error", err.Error()))
+	if err := s.mixi2Client.CreateThread(ctx, posts); err != nil {
+		s.logger.Error("failed to create thread", slog.String("error", err.Error()))
 		return
 	}
 
