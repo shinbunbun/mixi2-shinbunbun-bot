@@ -98,6 +98,19 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("triggered"))
 	})
+	healthMux.HandleFunc("POST /dry-run", func(w http.ResponseWriter, r *http.Request) {
+		logger.Info("dry-run requested")
+		ctx, cancel := context.WithTimeout(r.Context(), 120*time.Second)
+		defer cancel()
+		result, err := sched.DryRun(ctx)
+		if err != nil {
+			logger.Error("dry-run failed", slog.Any("error", err))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(result))
+	})
 	healthServer := &http.Server{
 		Addr:    ":" + cfg.HealthPort,
 		Handler: healthMux,

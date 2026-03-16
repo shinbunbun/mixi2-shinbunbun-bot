@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -50,6 +51,15 @@ func (s *Scheduler) Stop() {
 
 func (s *Scheduler) TriggerNow() {
 	go s.postDailySummary()
+}
+
+func (s *Scheduler) DryRun(ctx context.Context) (string, error) {
+	since := time.Now().Add(-24 * time.Hour)
+	events, err := s.githubClient.FetchRecentEvents(ctx, since)
+	if err != nil {
+		return "", fmt.Errorf("fetch github events: %w", err)
+	}
+	return s.summaryGen.Generate(ctx, events), nil
 }
 
 func (s *Scheduler) postDailySummary() {
