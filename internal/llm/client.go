@@ -31,7 +31,7 @@ func (c *Client) GenerateSummary(ctx context.Context, systemPrompt, userPrompt s
 			openai.SystemMessage(systemPrompt),
 			openai.UserMessage(userPrompt),
 		},
-		MaxTokens: openai.Int(128),
+		MaxTokens: openai.Int(256),
 	})
 	if err != nil {
 		return "", fmt.Errorf("LLM completion: %w", err)
