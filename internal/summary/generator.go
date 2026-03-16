@@ -22,8 +22,8 @@ func NewGenerator(llmClient *llm.Client) *Generator {
 }
 
 func (g *Generator) Generate(ctx context.Context, events []github.Event) string {
-	systemPrompt, userPrompt := llm.BuildPrompt(events)
-	result, err := g.llmClient.GenerateSummary(ctx, systemPrompt, userPrompt)
+	messages := llm.BuildPrompt(events)
+	result, err := g.llmClient.GenerateSummary(ctx, messages)
 	if err != nil {
 		slog.Warn("LLM summary failed, falling back to template", slog.String("error", err.Error()))
 		return g.fallback(events)
@@ -33,6 +33,19 @@ func (g *Generator) Generate(ctx context.Context, events []github.Event) string 
 	if result == "" {
 		slog.Warn("LLM returned empty response, falling back to template")
 		return g.fallback(events)
+	}
+
+	// リトライ: 短すぎる場合
+	if len([]rune(result)) < 100 {
+		slog.Info("LLM output too short, retrying", slog.Int("length", len([]rune(result))))
+		retryMessages := append(messages,
+			llm.Message{Role: "assistant", Content: result},
+			llm.Message{Role: "user", Content: "短すぎます。140〜149文字になるよう、もっと詳細を追加して書き直してください。"},
+		)
+		retry, retryErr := g.llmClient.GenerateSummary(ctx, retryMessages)
+		if retryErr == nil && strings.TrimSpace(retry) != "" {
+			result = strings.TrimSpace(retry)
+		}
 	}
 
 	return truncate(result)

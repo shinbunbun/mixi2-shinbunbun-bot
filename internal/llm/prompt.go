@@ -9,14 +9,12 @@ import (
 )
 
 const systemPrompt = `あなたはGitHub活動の要約を生成するアシスタントです。
-- 必ず140〜149文字の日本語で要約する。120文字未満は絶対NG。文字数が足りなければ詳細を追加して埋める
+- 140〜149文字の日本語で要約する。短すぎず長すぎず、できるだけ多くの情報を詰め込む
 - 「今日はこんなことをしたよ！」という語り口で、主な活動内容をハイライトする
 - 全てを網羅する必要はない。特に印象的な活動をピックアップする
 - PR番号やリポジトリ名は出力に含めず、何をしたかの内容を具体的に書く
 - 絵文字を効果的に使う
-- 要約テキストのみを返す（前置きや説明は不要）
-
-出力例: 「今日はmixi2のbotにLLM要約機能を追加して、GitHubの活動を自動で要約投稿できるようにしたよ！さらにdotfilesリポジトリでローカルLLM推論環境も構築して、Apple Silicon GPUでの推論がサクサク動くようになった✨ Nixの開発環境設定も整えてかなり快適になった🚀」`
+- 要約テキストのみを返す（前置きや説明は不要）`
 
 func translateAction(action string) string {
 	switch action {
@@ -31,7 +29,14 @@ func translateAction(action string) string {
 	}
 }
 
-func BuildPrompt(events []github.Event) (system, user string) {
+func BuildPrompt(events []github.Event) []Message {
+	messages := []Message{
+		{Role: "system", Content: systemPrompt},
+		// Few-shot example
+		{Role: "user", Content: "日付: 2026/03/14\n活動内容:\n[Push] CI設定を修正; READMEを更新\n\n[PR] Nix flake開発環境の追加 (マージ済み)"},
+		{Role: "assistant", Content: "今日はCI設定の修正とドキュメント整備をやったよ！さらにNix flakeを使った開発環境構築のPRもマージして、チーム全体の開発体験を改善✨ 環境の統一がさらに進んで、新メンバーのオンボーディングもスムーズになりそう🚀 地道だけど大事な改善を積み重ねた一日だった💪"},
+	}
+
 	var parts []string
 
 	now := time.Now()
@@ -64,10 +69,13 @@ func BuildPrompt(events []github.Event) (system, user string) {
 		}
 	}
 
+	var userPrompt string
 	if len(parts) == 0 {
-		return systemPrompt, "今日はGitHub活動がありませんでした。"
+		userPrompt = "今日はGitHub活動がありませんでした。"
+	} else {
+		userPrompt = fmt.Sprintf("日付: %s\n活動内容:\n%s", dateStr, strings.Join(parts, "\n\n"))
 	}
 
-	userPrompt := fmt.Sprintf("日付: %s\n活動内容:\n%s", dateStr, strings.Join(parts, "\n\n"))
-	return systemPrompt, userPrompt
+	messages = append(messages, Message{Role: "user", Content: userPrompt})
+	return messages
 }
