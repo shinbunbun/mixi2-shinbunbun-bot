@@ -23,6 +23,8 @@ type Payload struct {
 	Issue        *Issue        `json:"issue"`
 	RefType      string        `json:"ref_type"`
 	Ref          string        `json:"ref"`
+	Before       string        `json:"before"`
+	Head         string        `json:"head"`
 	Review       *Review       `json:"review"`
 	Comment      *Comment      `json:"comment"`
 	Release      *Release      `json:"release"`
@@ -60,5 +62,19 @@ type Release struct {
 
 type Forkee struct {
 	FullName string `json:"full_name"`
+}
+
+// CompareResponse is the response from the GitHub compare API.
+type CompareResponse struct {
+	Commits []CompareCommit `json:"commits"`
+}
+
+type CompareCommit struct {
+	SHA    string       `json:"sha"`
+	Commit CommitDetail `json:"commit"`
+}
+
+type CommitDetail struct {
+	Message string `json:"message"`
 }
 
