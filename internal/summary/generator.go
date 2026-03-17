@@ -4,12 +4,30 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/shinbunbun/mixi2-shinbunbun-bot/internal/github"
 	"github.com/shinbunbun/mixi2-shinbunbun-bot/internal/llm"
 )
+
+// 禁止パターン: 未来志向フィラー・抽象化・メタテキスト
+var forbiddenPatterns = regexp.MustCompile(
+	`目指[すそせ]|していく|していこう|加速|推進中|引き続き|明日も|これからも|していきたい|していかないと|〜?\d+文字[）)]?$`,
+)
+
+func hasForbiddenPattern(text string) bool {
+	return forbiddenPatterns.MatchString(text)
+}
+
+func removeForbiddenPatterns(text string) string {
+	cleaned := forbiddenPatterns.ReplaceAllString(text, "")
+	// 連続する句読点・空白をクリーンアップ
+	cleaned = regexp.MustCompile(`[、。！]{2,}`).ReplaceAllString(cleaned, "。")
+	cleaned = regexp.MustCompile(`\s{2,}`).ReplaceAllString(cleaned, " ")
+	return strings.TrimSpace(cleaned)
+}
 
 const maxPostLength = 149
 
@@ -46,6 +64,30 @@ func (g *Generator) Generate(ctx context.Context, events []github.Event) string 
 		if retryErr == nil && strings.TrimSpace(retry) != "" {
 			result = strings.TrimSpace(retry)
 		}
+	}
+
+	// リトライ: 禁止パターン検出
+	if hasForbiddenPattern(result) {
+		matched := forbiddenPatterns.FindAllString(result, -1)
+		slog.Info("LLM output contains forbidden patterns, retrying",
+			slog.String("patterns", strings.Join(matched, ", ")))
+		retryMessages := append(messages,
+			llm.Message{Role: "assistant", Content: result},
+			llm.Message{Role: "user", Content: fmt.Sprintf(
+				"「%s」は使用禁止です。全て過去形で、やったことだけを書き直してください。",
+				strings.Join(matched, "」「"),
+			)},
+		)
+		retry, retryErr := g.llmClient.GenerateSummary(ctx, retryMessages)
+		if retryErr == nil && strings.TrimSpace(retry) != "" {
+			result = strings.TrimSpace(retry)
+		}
+	}
+
+	// 最終クリーンアップ: リトライ後もまだ禁止パターンが残っていたら削除
+	if hasForbiddenPattern(result) {
+		slog.Warn("forbidden patterns still present after retry, removing them")
+		result = removeForbiddenPatterns(result)
 	}
 
 	return truncate(result)

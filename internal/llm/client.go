@@ -45,7 +45,7 @@ func (c *Client) GenerateSummary(ctx context.Context, messages []Message) (strin
 		Model:       c.model,
 		Messages:    params,
 		MaxTokens:   openai.Int(256),
-		Temperature: openai.Float(0.7),
+		Temperature: openai.Float(0.5),
 	})
 	if err != nil {
 		return "", fmt.Errorf("LLM completion: %w", err)
