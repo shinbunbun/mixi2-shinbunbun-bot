@@ -21,8 +21,9 @@ type Scheduler struct {
 }
 
 func New(githubClient *github.Client, mixi2Client *mixi2.Client, summaryGen *summary.Generator) *Scheduler {
+	loc, _ := time.LoadLocation("Asia/Tokyo")
 	return &Scheduler{
-		cron:         cron.New(),
+		cron:         cron.New(cron.WithLocation(loc)),
 		githubClient: githubClient,
 		mixi2Client:  mixi2Client,
 		summaryGen:   summaryGen,
