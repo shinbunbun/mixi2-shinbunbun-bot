@@ -115,13 +115,6 @@ type prInfo struct {
 	action string
 }
 
-type issueInfo struct {
-	repo   string
-	number int
-	title  string
-	action string
-}
-
 func generateTemplate(events []github.Event) string {
 	now := time.Now()
 	dateStr := now.Format("2006/01/02")
@@ -133,8 +126,6 @@ func generateTemplate(events []github.Event) string {
 	pushRepos := make(map[string]*repoStats)
 	totalCommits := 0
 	var prs []prInfo
-	var issues []issueInfo
-
 	for _, ev := range events {
 		switch ev.Type {
 		case "PushEvent":
@@ -155,15 +146,6 @@ func generateTemplate(events []github.Event) string {
 				action: ev.Payload.Action,
 			})
 
-		case "IssuesEvent":
-			if ev.Payload.Issue != nil {
-				issues = append(issues, issueInfo{
-					repo:   ev.Repo.Name,
-					number: ev.Payload.Issue.Number,
-					title:  ev.Payload.Issue.Title,
-					action: ev.Payload.Action,
-				})
-			}
 		}
 	}
 
@@ -183,13 +165,6 @@ func generateTemplate(events []github.Event) string {
 		parts = append(parts, fmt.Sprintf("🔀 PR: %d件", len(prs)))
 		for _, pr := range prs {
 			parts = append(parts, fmt.Sprintf("  - %s #%d (%s)", pr.repo, pr.number, pr.action))
-		}
-	}
-
-	if len(issues) > 0 {
-		parts = append(parts, fmt.Sprintf("📝 Issue: %d件", len(issues)))
-		for _, issue := range issues {
-			parts = append(parts, fmt.Sprintf("  - %s #%d: \"%s\" (%s)", issue.repo, issue.number, issue.title, issue.action))
 		}
 	}
 
