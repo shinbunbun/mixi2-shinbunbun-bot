@@ -63,13 +63,6 @@ func BuildPrompt(events []github.Event) []Message {
 			action := translateAction(ev.Payload.Action)
 			parts = append(parts, fmt.Sprintf("[PR] %s (%s)", title, action))
 
-		case "IssuesEvent":
-			title := ""
-			if ev.Payload.Issue != nil {
-				title = ev.Payload.Issue.Title
-			}
-			action := translateAction(ev.Payload.Action)
-			parts = append(parts, fmt.Sprintf("[Issue] %s (%s)", title, action))
 		}
 	}
 
