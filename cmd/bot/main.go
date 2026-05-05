@@ -69,7 +69,7 @@ func main() {
 	githubClient := github.NewClient(cfg.GitHubToken)
 
 	// Create LLM client and summary generator
-	llmClient := llm.NewClient(cfg.LLMBaseURL, cfg.LLMModel)
+	llmClient := llm.NewClient(cfg.LLMBaseURL, cfg.LLMModel, cfg.LLMDisableThinking)
 	summaryGen := summary.NewGenerator(llmClient)
 
 	// Start scheduler

@@ -18,11 +18,22 @@ type Client struct {
 	model  string
 }
 
-func NewClient(baseURL, model string) *Client {
-	client := openai.NewClient(
+// NewClient は OpenAI 互換 LLM サーバ向けクライアントを生成する。
+// disableThinking=true の場合、Qwen3 系モデルの reasoning/thinking モードを
+// chat_template_kwargs.enable_thinking=false で無効化する。
+// thinking が有効なまま max_tokens を超えると content が空応答になるため、
+// llama.cpp + Qwen3.6-A3B 等のサーバを利用する場合は true 推奨。
+func NewClient(baseURL, model string, disableThinking bool) *Client {
+	opts := []option.RequestOption{
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("not-needed"),
-	)
+	}
+	if disableThinking {
+		opts = append(opts, option.WithJSONSet("chat_template_kwargs", map[string]any{
+			"enable_thinking": false,
+		}))
+	}
+	client := openai.NewClient(opts...)
 	return &Client{
 		client: &client,
 		model:  model,
