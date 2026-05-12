@@ -66,7 +66,7 @@ func (s *Scheduler) DryRun(ctx context.Context) (string, error) {
 func (s *Scheduler) postDailySummary() {
 	s.logger.Info("running daily summary job")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
 	since := time.Now().Add(-24 * time.Hour)
