@@ -1,9 +1,14 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
 
-  extends: ["config:recommended", ":semanticCommits", ":timezone(Asia/Tokyo)", "helpers:pinGitHubActionDigests"],
+  extends: ["config:recommended", ":semanticCommits", "helpers:pinGitHubActionDigests"],
 
   enabledManagers: ["github-actions", "dockerfile"],
+
+  assignees: ["shinbunbun"],
+
+  minimumReleaseAge: "7 days",
+  minimumReleaseAgeBehaviour: "timestamp-optional",
 
   packageRules: [
     {
@@ -15,6 +20,10 @@
       matchUpdateTypes: ["pin", "pinDigest", "digest"],
       automerge: true,
       automergeType: "pr",
+    },
+    {
+      matchUpdateTypes: ["pinDigest"],
+      minimumReleaseAge: null,
     },
   ],
 }
