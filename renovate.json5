@@ -1,0 +1,20 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+
+  extends: ["config:recommended", ":semanticCommits", ":timezone(Asia/Tokyo)", "helpers:pinGitHubActionDigests"],
+
+  enabledManagers: ["github-actions", "dockerfile"],
+
+  packageRules: [
+    {
+      matchManagers: ["dockerfile"],
+      pinDigests: true,
+    },
+    {
+      matchManagers: ["dockerfile", "github-actions"],
+      matchUpdateTypes: ["pin", "pinDigest", "digest"],
+      automerge: true,
+      automergeType: "pr",
+    },
+  ],
+}
