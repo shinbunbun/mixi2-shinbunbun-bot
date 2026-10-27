@@ -5,12 +5,13 @@
 
   enabledManagers: ["github-actions", "dockerfile", "gomod"],
 
-  postUpdateOptions: ["gomodTidy"],
+  postUpdateOptions: ["gomodTidy", "gomodUpdateImportPaths"],
 
   assignees: ["shinbunbun"],
 
   prConcurrentLimit: 0,
   prHourlyLimit: 0,
+  branchConcurrentLimit: 0,
 
   minimumReleaseAge: "7 days",
   minimumReleaseAgeBehaviour: "timestamp-optional",
@@ -35,6 +36,12 @@
       matchDepTypes: ["require"],
       matchUpdateTypes: ["minor", "patch"],
       groupName: "gomod non-major",
+    },
+    {
+      matchManagers: ["gomod"],
+      matchUpdateTypes: ["minor"],
+      matchCurrentVersion: "<1.0.0",
+      groupName: null,
     },
   ],
 }
