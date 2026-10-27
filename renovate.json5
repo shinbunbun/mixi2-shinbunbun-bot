@@ -34,14 +34,15 @@
     {
       matchManagers: ["gomod"],
       matchDepTypes: ["require"],
-      matchUpdateTypes: ["minor", "patch"],
+      matchUpdateTypes: ["patch"],
       groupName: "gomod non-major",
     },
     {
       matchManagers: ["gomod"],
+      matchDepTypes: ["require"],
       matchUpdateTypes: ["minor"],
-      matchCurrentVersion: "<1.0.0",
-      groupName: null,
+      matchCurrentVersion: ">=1.0.0",
+      groupName: "gomod non-major",
     },
   ],
 }
