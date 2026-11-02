@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/mixigroup/mixi2-application-sdk-go v1.2.0
-	github.com/openai/openai-go/v3 v3.84.0
+	github.com/openai/openai-go/v3 v3.86.0
 	github.com/robfig/cron/v3 v3.0.1
 	google.golang.org/grpc v1.84.0
 )
