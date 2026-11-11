@@ -14,8 +14,12 @@ env:
   IMAGE_NAME: shinbunbun/mixi2-shinbunbun-bot
 
 jobs:
+  malicious:
+    uses: ./.github/workflows/osv-scanner.yml
+
   build:
     if: github.event_name == 'pull_request'
+    needs: malicious
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -33,6 +37,7 @@ jobs:
 
   build-and-push:
     if: github.event_name == 'push'
+    needs: malicious
     runs-on: ubuntu-latest
     permissions:
       contents: read

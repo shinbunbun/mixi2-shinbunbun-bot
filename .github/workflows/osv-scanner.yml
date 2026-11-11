@@ -1,0 +1,47 @@
+name: osv-scanner
+
+on:
+  workflow_call:
+  schedule:
+    - cron: "40 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  malicious:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Check that go.mod is the only lockfile
+        run: |
+          set -euo pipefail
+          have=$(git ls-files -- '*package-lock.json' '*npm-shrinkwrap.json' '*pnpm-lock.yaml' '*yarn.lock' \
+            '*Cargo.lock' '*go.mod' '*uv.lock' '*poetry.lock' '*Pipfile.lock' '*Gemfile.lock' '*composer.lock')
+          if [ "$have" != go.mod ]; then
+            echo "::error::Lockfiles changed; update this workflow: $(tr '\n' ' ' <<<"$have")"
+            exit 1
+          fi
+      - name: osv-scanner
+        run: |
+          docker run --rm -v "$PWD:/src" -w /src \
+            ghcr.io/google/osv-scanner:v2.7.0@sha256:4f3b7e2c64b9d38a5febc5a7e4a3dfef1d1362f726dea7a2ef4762b46469fcd0 \
+            scan source --format=json --output-file=osv.json --lockfile=go.mod || echo "osv-scanner exit $?"
+      - name: Fail on malicious packages (MAL-)
+        run: |
+          set -euo pipefail
+          if [ ! -s osv.json ] || ! jq -e '.results | type == "array"' osv.json >/dev/null; then
+            echo "::error::Cannot read the osv-scanner result"
+            exit 1
+          fi
+          mal=$(jq -r '.results[] | .packages[]? | .package as $p | .vulnerabilities[]?
+            | select(.id | startswith("MAL-")) | "\($p.name)@\($p.version) \(.id)"' osv.json)
+          if [ -n "$mal" ]; then
+            while IFS= read -r line; do echo "::error::Malicious package: $line"; done <<<"$mal"
+            exit 1
+          fi
+          echo "No MAL- entries (known vulnerabilities in $(jq '[.results[]?.packages[]?] | length' osv.json) packages are out of scope)"
