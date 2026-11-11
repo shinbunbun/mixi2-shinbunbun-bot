@@ -4,14 +4,14 @@ go 1.26.0
 
 require (
 	github.com/mixigroup/mixi2-application-sdk-go v1.2.0
-	github.com/openai/openai-go/v3 v3.91.1
+	github.com/openai/openai-go/v3 v3.94.0
 	github.com/robfig/cron/v3 v3.0.1
 	google.golang.org/grpc v1.85.0
 )
 
 require (
 	github.com/coder/websocket v1.8.15 // indirect
-	github.com/tidwall/gjson v1.19.0 // indirect
+	github.com/tidwall/gjson v1.20.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
